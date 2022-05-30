@@ -103,6 +103,27 @@ app.post("/createEvent",verifyJWT ,async (req,res) => {
     return res.status(200).json({message: "Event saved and updated"}) 
 })
 
+app.post("/joinEvent",verifyJWT, async (req,res) => {
+    let user = await UserSchema.findOne({_id: req.userID})
+    let event = await EventSchema.findOne({_id: req.body.eventID})
+    
+    if(user.username == event.host) return res.status(400).json({message: "You are the owner, you can't join!"});
+    
+    for(let i = 0; i < event.users.length; i++) {
+        if(event.users[i].username == user.username) return res.status(400).json({message: "Event already joined"})
+    }
+    
+    if(user && event) {
+        let addUser = await EventSchema.updateOne({_id: event._id}, {
+            $push: {users: user}
+        })
+        
+        if(addUser) {
+            return res.status(200).json({message: "Event joined!"})
+        }
+    }
+})
+
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
 })
