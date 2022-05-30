@@ -213,6 +213,56 @@ app.post("/leaveEvent", verifyJWT, async (req,res) => {
     })
 })
 
+app.post("/addFriend", verifyJWT, getUser, async (req,res) => {
+    
+    const friendID = await UserSchema.findOne({_id: req.body.ID})
+    const friend = req.currentUser[0].friends
+    
+    for(i = 0; i < friend.length; i++) {
+        if(friend[i].valueOf() == friendID._id.valueOf()) {
+            
+            return res.status(400).json({message: "User already friend!"})
+        }
+    }
+
+    if(user) {
+        let addFriend = await UserSchema.updateOne({_id: req.userID}, {
+            $push: {friends: friendID._id}
+        })
+        
+        if(addFriend) {
+            return res.status(200).json({message: "Friend Added"})
+        }
+    }
+})
+
+app.post("/sendFriendRequest", verifyJWT, getUser, async (req,res) => {
+    const friendID = await UserSchema.findOne({_id: req.body.ID})
+    const currentUser = req.currentUser
+    let currentFriends = currentUser.friends
+    let currentRequests = currentUser.requestsSent
+    
+    // const friend = req.currentUser[0].friends
+    
+    // for(i = 0; i < friend.length; i++) {
+    //     if(friend[i].valueOf() == friendID._id.valueOf()) {
+            
+    //         return res.status(400).json({message: "User already friend!"})
+    //     }
+    // }
+    if(currentUser && friendID) {
+        let sendRequest = await  UserSchema.findOneAndUpdate({_id: req.body.ID}, {
+            $push: {requestsReceived: req.currentUser._id}
+        })
+
+        let saveRequest = await  UserSchema.findByIdAndUpdate({_id: req.currentUser._id}, {
+            $push: {requestsSent: friendID._id}
+        })
+        let userInfo = await UserSchema.find({_id: req.currentUser._id})
+        return res.status(200).json({message: "Request Sent",currentFriends: userInfo[0].friends,currentRequests: userInfo[0].requestsSent})
+    }
+})
+
 
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
