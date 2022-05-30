@@ -263,6 +263,16 @@ app.post("/sendFriendRequest", verifyJWT, getUser, async (req,res) => {
     }
 })
 
+app.get("/getFriendRequests", verifyJWT, getUser, async (req,res) => {
+    const users = await UserSchema.find({_id: {$in: req.currentUser.requestsReceived}})
+    return res.status(200).json({friendRequests: users})
+})
+
+app.get("/getFriends", verifyJWT,getUser, async (req,res) => {
+    const friends = await UserSchema.find({_id: {$in: req.currentUser.friends}})
+    res.status(200).json({friends})
+})
+
 
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
