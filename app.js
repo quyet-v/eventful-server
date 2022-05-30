@@ -273,6 +273,29 @@ app.get("/getFriends", verifyJWT,getUser, async (req,res) => {
     res.status(200).json({friends})
 })
 
+app.post("/acceptFriendRequest", verifyJWT,getUser, async (req,res) => {
+    const acceptedUser = await UserSchema.findOne({_id: req.body.user})
+
+    const client = req.currentUser
+
+    if(client && acceptedUser) {
+        let acceptedUserUpdate = await  UserSchema.findOneAndUpdate({_id: acceptedUser._id}, {
+            $push: {friends: client._id},
+            $pull: {requestsSent: client._id}
+        })
+
+        let clientUpdate = await  UserSchema.findByIdAndUpdate({_id: client._id}, {
+            $push: {friends: acceptedUser._id},
+            $pull: {requestsReceived: acceptedUser._id}
+        })
+
+        let userInfo = await UserSchema.find({_id: req.currentUser._id})
+        console.log(userInfo)
+        
+        return res.status(200).json({message: "Request Sent",currentFriends: userInfo[0].friends,currentRequests: userInfo[0].requestsSent})
+    }
+})
+
 
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
