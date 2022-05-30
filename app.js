@@ -213,6 +213,22 @@ app.post("/leaveEvent", verifyJWT, async (req,res) => {
     })
 })
 
+app.post("/findUsers", verifyJWT, getUser , async (req,res) => {
+    const searchedUser = req.body.input
+    const result = await UserSchema.find({username: {$regex: searchedUser}})
+
+    const checkName = (user) => {
+        return user.username != req.currentUser.username;
+    }
+
+    const resultsFilter = result.filter(checkName)
+    const requestsSent = req.currentUser.requestsSent
+    
+    if(result) {
+        res.status(200).json({message: "Users found!", resultsFilter,currentFriends: req.currentUser.friends, requestsSent})
+    }
+})
+
 app.post("/addFriend", verifyJWT, getUser, async (req,res) => {
     
     const friendID = await UserSchema.findOne({_id: req.body.ID})
