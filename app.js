@@ -124,6 +124,28 @@ app.post("/joinEvent",verifyJWT, async (req,res) => {
     }
 })
 
+app.get("/eventInfo/:id", verifyJWT, async (req,res) => {
+    let eventID = mongoose.Types.ObjectId(req.params.id)
+    let invited = false
+    
+    if(eventID) {
+        let event = await EventSchema.findOne({_id: eventID})
+
+        for(let i = 0; i < event.users.length; i++) {
+            if(req.userID == event.users[i]._id) {
+                invited = true;
+                break;
+            }
+        }
+
+        if(event) {
+            return res.status(200).json({message: "Event retrieved", event, invited})
+        }else {
+            return res.status(403).json({message: "Failed to retrieve"})
+        }
+    }
+})
+
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
 })
