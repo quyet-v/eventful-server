@@ -60,6 +60,36 @@ app.post("/login", async (req,res) => {
     }
 })
 
+app.post("/createEvent",verifyJWT ,async (req,res) => {
+    
+    let user = await UserSchema.findOne({_id: req.userID})
+
+    if(user == null) return res.status(403).json({message: "User not found"})
+   
+    let newEvent = new EventSchema({
+        host: user.username,
+        name: req.body.name,
+        description: req.body.description,
+        date: req.body.date,
+        time: req.body.time,
+        location: req.body.location,
+    })
+
+    let results = newEvent.save((err,res) => {
+        if(err) return res.status(403).json({message: "A error occured while saving the event!"})
+    })
+    
+    if(results == null) return res.status(403).json({message: "A error occured while saving the event!"})
+
+    let updateResults = await UserSchema.updateOne({_id: req.userID},{
+        $push: {events: results._id}
+    })
+
+    if(updateResults == null) return res.status(403).json({message: "A error occured while updating the event!"})
+
+    return res.status(200).json({message: "Event saved and updated"}) 
+})
+
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
 })
