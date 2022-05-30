@@ -14,6 +14,19 @@ mongoose.connect(`mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD
 app.use(cors())
 app.use(express.json())
 
+const verifyJWT = (req,res,next) => {
+    
+    const token = req.headers["authorization"].split(" ")[1]
+    
+    if(token) {
+        jwt.verify(token,"thisistest", (err,result) => {
+            if(err) return res.status(403).json({message: "Invalid Token"})        
+            req.userID = result.userId 
+            next()
+        })
+    }
+}
+
 app.post("/signup", async (req,res) => {
     let pword = req.body.password
     const salt = await bcrypt.genSalt(10)
