@@ -200,6 +200,19 @@ app.get("/getAllUserEvents",verifyJWT, async (req,res) => {
     }
 })
 
+app.post("/leaveEvent", verifyJWT, async (req,res) => {
+    let eventID = req.body.eventID
+    let user = await UserSchema.findOne({_id: req.userID})
+    
+    EventSchema.findOneAndUpdate({_id: mongoose.Types.ObjectId(eventID)}, {
+        $pull: {users: {_id: user._id}}
+    }, {new:true}, (error, results) => {
+        if(error) return res.status(400).json({message: error.message})
+
+        return res.status(200).json({message: results})
+    })
+})
+
 
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
