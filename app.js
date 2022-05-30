@@ -178,6 +178,21 @@ app.delete("/event/:id", verifyJWT,getUser, async (req,res) => {
     }   
 })
 
+app.get("/getUserEvents",verifyJWT, async (req,res) => {
+    let user = await UserSchema.findOne({_id: req.userID})
+
+    if(user) {
+        req.username = user.username
+    }
+
+    let userEvents = await EventSchema.find({host: req.username})
+    
+    if(userEvents) {
+        return res.status(200).json({events: userEvents})
+    }
+})
+
+
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
 })
