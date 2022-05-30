@@ -192,6 +192,14 @@ app.get("/getUserEvents",verifyJWT, async (req,res) => {
     }
 })
 
+app.get("/getAllUserEvents",verifyJWT, async (req,res) => {
+    let userEvents = await EventSchema.find()
+    
+    if(userEvents) {
+        return res.status(200).json({events: userEvents})
+    }
+})
+
 
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
