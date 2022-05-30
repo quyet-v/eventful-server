@@ -14,6 +14,15 @@ mongoose.connect(`mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD
 app.use(cors())
 app.use(express.json())
 
+const containsUser = (userID,array) => {
+    for(a = 0; a < array.length; a++) {
+        if(array[a].valueOf() == userID) {
+            return true;
+        }
+    }
+    return false;
+}
+
 const verifyJWT = (req,res,next) => {
     
     const token = req.headers["authorization"].split(" ")[1]
