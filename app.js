@@ -39,6 +39,14 @@ const getUser = async (req,res,next) => {
     next();
 }
 
+app.get("/getUserInfo",verifyJWT, async (req,res) => {
+    let user = await UserSchema.findOne({_id: req.userID})
+    
+    if(user) {
+        return res.status(200).json({username: user.username})
+    }
+})
+
 
 app.post("/signup", async (req,res) => {
     let pword = req.body.password
