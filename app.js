@@ -27,6 +27,19 @@ const verifyJWT = (req,res,next) => {
     }
 }
 
+const getUser = async (req,res,next) => {
+    const currentUser = await UserSchema.findOne({_id: req.userID});
+
+    if(currentUser) {
+        req.currentUser = currentUser;
+    }else {
+        res.status(400).json({message: "User not found!"});
+    }
+    
+    next();
+}
+
+
 app.post("/signup", async (req,res) => {
     let pword = req.body.password
     const salt = await bcrypt.genSalt(10)
