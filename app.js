@@ -38,6 +38,28 @@ app.post("/signup", async (req,res) => {
      })
 })
 
+app.post("/login", async (req,res) => {
+    let password = req.body.password
+    let user = await UserSchema.findOne({username: req.body.username})
+    
+    if(user == null) {
+        return res.status(400).send("User not found!")
+    }
+
+    try{
+        await bcrypt.compare(req.body.password,user.password, (err,result) => {
+            if(result) {
+                let token = jwt.sign({userId: user._id}, "thisistest")
+                return res.status(200).json({message: "Login succeeded!",token})
+            }else if(!result) {
+                return res.status(400).json({message: "wrong username/password"})
+            }
+        })
+    }catch(error) {
+        res.send(error.message)
+    }
+})
+
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
 })
