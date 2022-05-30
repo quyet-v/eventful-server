@@ -159,6 +159,25 @@ app.get("/eventInfo/:id", verifyJWT, async (req,res) => {
     }
 })
 
+app.delete("/event/:id", verifyJWT,getUser, async (req,res) => {
+    const id = req.params
+    const request = EventSchema.deleteOne({_id: mongoose.Types.ObjectId(id)}, (err,res) => {
+        if(err) return res.status(400).json({message: err})
+    })
+    const request2 = UserSchema.updateOne({_id: req.currentUser._id}, {
+        $pull: {events: mongoose.Types.ObjectId(id)}
+    }, (err,res) => {
+        if(err) return res.status(400).json({message: err})
+        
+    })
+
+    const userEvents = await EventSchema.find({host: req.currentUser.username})
+    console.log(userEvents)
+    if(userEvents) {
+        return res.status(200).json({message:"succss",events: userEvents})
+    }   
+})
+
 app.listen( process.env.PORT || PORT,() => {
     console.log("Server started on port" + PORT)
 })
