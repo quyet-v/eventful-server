@@ -23,6 +23,96 @@ const containsUser = (userID,array) => {
     return false;
 }
 
+io.on("connection", async (socket) => {
+    console.log(`user has connected ${socket.id}`)
+
+    let roomFound;
+    let currentUser;
+    let currentUsername;
+
+    socket.on("join", async (data) => {
+        if(data.token) {
+            jwt.verify(data.token,"thisistest", (err,result) => {
+                
+                if(err) {
+                    console.log(err.message);
+                    return;
+                } 
+                
+                socket.user = result.userId
+                currentUser = result.userId
+
+                
+                
+            })
+
+            
+        }
+
+        currentUsername = await UserSchema.findOne({_id: data.user});
+        console.log(currentUsername)
+
+        //Get all rooms
+        let allRooms = await RoomSchema.find();
+
+        //Search through all rooms to see if user is in room
+        for(i = 0; i < allRooms.length; i++) {
+            if(containsUser(data.user,allRooms[i].users) && containsUser(currentUser,allRooms[i].users)) {
+                roomFound = allRooms[i];
+                break;
+            }
+        }
+        
+        //If room found, joins room
+        //If room not found, create room and join room
+        if(roomFound) {
+            console.log("room joined!")
+            
+            socket.join(roomFound._id.valueOf());
+        }else {
+            let usersArray = [mongoose.Types.ObjectId(data.user),mongoose.Types.ObjectId(socket.user)]
+            let newRoom = new RoomSchema({
+                users: usersArray
+            })
+
+            await newRoom.save((err,res) => {
+                if(err) {
+                    console.log(err.message);
+                }else {
+                    console.log("room created and joined!")
+                    roomFound = res
+                    socket.join(res._id.valueOf());
+                }
+            })
+        }
+
+        socket.emit("returnmessages", {roomFound,currentUsername})
+
+
+    })
+
+    socket.on("closeconnection", () => {
+        if(roomFound) {
+            socket.leave(roomFound._id)
+            roomFound = null
+            socket.disconnect()
+        } 
+    })
+
+    socket.on("sendmessage", async message => {
+        if(roomFound) {
+            let senderObject = await UserSchema.findOne({_id: mongoose.Types.ObjectId(currentUser)});
+            console.log({sender: senderObject.username,message}) 
+            
+            let room = await RoomSchema.findOne({_id: roomFound._id})
+            await room.messages.push({sender: senderObject.username,message})
+            await room.save()
+            let room2 = await RoomSchema.findOne({_id: roomFound._id})
+            io.sockets.in(roomFound._id.valueOf()).emit("giveback", room2)
+        }
+    })
+})
+
 const verifyJWT = (req,res,next) => {
     
     const token = req.headers["authorization"].split(" ")[1]
