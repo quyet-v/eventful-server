@@ -2,8 +2,9 @@
   "name": "eventful-final-server",
   "version": "1.0.0",
   "main": "index.js",
+  
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon app.js"
   },
   "author": "",
   "license": "ISC",
@@ -16,7 +17,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.6.0",
     "mongoose": "^6.3.4",
-    "nodemon": "^2.0.16",
+    "nodemon": "^2.0.18",
     "socket.io": "^4.5.1"
   }
 }
