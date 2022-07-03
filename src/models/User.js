@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb")
 let mongoose = require("mongoose")
 
 let UserSchema = new mongoose.Schema({
@@ -18,11 +19,9 @@ let UserSchema = new mongoose.Schema({
     friends: [
         
     ],
-    requestsSent: [
-        
+    sentRequests: [
     ],
-    requestsReceived: [
-        
+    receivedRequests: [
     ]
     
 

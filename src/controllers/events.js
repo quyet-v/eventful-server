@@ -1,3 +1,5 @@
+const EventSchema = require("../models/Event.js")
+
 
 const createEvent = async (req,res) => {
     let user = await UserSchema.findOne({_id: req.userID})
@@ -102,4 +104,16 @@ const leaveEvent = async (req,res) => {
         return res.status(200).json({message: results})
     })
 }
-module.exports = {createEvent,joinEvent,getEventInfo,removeEvent,leaveEvent}
+
+const getAllEvents = async (req,res) => {
+    let userEvents = await EventSchema.find()
+    
+    if(userEvents) {
+        return res.status(200).json({events: userEvents})
+    }
+}
+
+
+
+
+module.exports = {createEvent,joinEvent,getEventInfo,removeEvent,leaveEvent,getAllEvents}

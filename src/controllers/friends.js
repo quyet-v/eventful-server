@@ -1,88 +1,160 @@
+const UserSchema = require("../models/User.js")
+const {containsUser} = require("../helpers/functions")
+const mongoose = require("mongoose");
+const {
+    removeSentRequest,
+    removeReceivedRequest,
+    addFriend
+} = require("../services/friends.js")
 
 const sendFriendRequest = async (req,res) => {
-    const friendID = await UserSchema.findOne({_id: req.body.ID})
-    const currentUser = req.currentUser
-    let currentFriends = currentUser.friends
-    let currentRequests = currentUser.requestsSent
+    const requestReceiverId = req.params.id;
+    const requestSenderId = req.userID;
+
+    const requestReceiver = await UserSchema.findOne({_id: requestReceiverId})
+    const requestSender = await UserSchema.findOne({_id: requestSenderId})
     
-    // const friend = req.currentUser[0].friends
+    const sentRequests = requestSender.sentRequests;
+
+    const friends = requestSender.friends;
     
-    // for(i = 0; i < friend.length; i++) {
-    //     if(friend[i].valueOf() == friendID._id.valueOf()) {
-            
-    //         return res.status(400).json({message: "User already friend!"})
-    //     }
-    // }
-    if(currentUser && friendID) {
-        let sendRequest = await  UserSchema.findOneAndUpdate({_id: req.body.ID}, {
-            $push: {requestsReceived: req.currentUser._id}
+    let returnObject = {
+        sentRequests,
+        friends
+    }
+    
+    if(containsUser(requestReceiverId,sentRequests)) {
+        const message = "Request already sent!";
+        returnObject = {...returnObject,message};
+        
+        return res.status(403).json(returnObject);
+    }
+
+    if(containsUser(requestReceiverId,friends)) {
+        const message = "Already friends!";
+        returnObject = {...returnObject,message};
+        
+        return res.status(403).json(returnObject);
+    }
+
+    if(requestSender && requestReceiver) {
+        const saveRequest = await  UserSchema.findOneAndUpdate({_id: requestReceiverId}, {
+            $push: {receivedRequests: mongoose.Types.ObjectId(requestSenderId)}
         })
 
-        let saveRequest = await  UserSchema.findByIdAndUpdate({_id: req.currentUser._id}, {
-            $push: {requestsSent: friendID._id}
+        let saveRequestSent = UserSchema.findByIdAndUpdate({_id: requestSenderId}, {
+            $push: {sentRequests: mongoose.Types.ObjectId(requestReceiverId)}
+        },{new: true}, (err,doc) => {
+            if(err) {
+                return res.status(403).json({message: "Error when send friend request!"});
+            }
+            else {
+                returnObject = null;
+                returnObject = {
+                    sentRequests: doc.sentRequests,
+                    friends: doc.friends,
+                    message: "Friend request sent!"
+                }
+               
+                return res.status(200).json(returnObject);
+            }
         })
-        let userInfo = await UserSchema.find({_id: req.currentUser._id})
-        return res.status(200).json({message: "Request Sent",currentFriends: userInfo[0].friends,currentRequests: userInfo[0].requestsSent})
     }
 }
 
 const acceptFriendRequest = async (req,res) => {
-    const acceptedUser = await UserSchema.findOne({_id: req.body.user})
 
-    const client = req.currentUser
+    const acceptedUser = req.params.id;
+    const user = req.userID;
 
-    if(client && acceptedUser) {
-        let acceptedUserUpdate = await  UserSchema.findOneAndUpdate({_id: acceptedUser._id}, {
-            $push: {friends: client._id},
-            $pull: {requestsSent: client._id}
-        })
+    removeSentRequest(req.userID,acceptedUser);
+    removeReceivedRequest(req.userID,acceptedUser);
 
-        let clientUpdate = await  UserSchema.findByIdAndUpdate({_id: client._id}, {
-            $push: {friends: acceptedUser._id},
-            $pull: {requestsReceived: acceptedUser._id}
-        })
+    addFriend(acceptedUser,user);
+    addFriend(user,acceptedUser);
 
-        let userInfo = await UserSchema.find({_id: req.currentUser._id})
-        console.log(userInfo)
+    res.redirect("/api/users/info");
+
+
+
+
+    // if(client && acceptedUser) {
+    //     let acceptedUserUpdate = await  UserSchema.findOneAndUpdate({_id: acceptedUser._id}, {
+    //         $push: {friends: client._id},
+    //         $pull: {requestsSent: client._id}
+    //     })
+
+    //     let clientUpdate = await  UserSchema.findByIdAndUpdate({_id: client._id}, {
+    //         $push: {friends: acceptedUser._id},
+    //         $pull: {requestsReceived: acceptedUser._id}
+    //     })
+
+    //     let userInfo = await UserSchema.find({_id: req.currentUser._id})
+    //     console.log(userInfo)
         
-        return res.status(200).json({message: "Request Sent",currentFriends: userInfo[0].friends,currentRequests: userInfo[0].requestsSent})
+    //     return res.status(200).json({message: "Request Sent",currentFriends: userInfo[0].friends,currentRequests: userInfo[0].requestsSent})
+    // }
+}
+
+const rejectFriendRequest = async (req,res) => {
+    try{
+
+        const rejectedId = req.params.id;
+        
+        removeSentRequest(req.userID,rejectedId);
+        removeReceivedRequest(req.userID,rejectedId)
+
+        res.redirect("/api/users/info");
     }
+    catch(error) {
+        return res.status(403).json({message: error.message})
+    }
+    
+    
+    // if(returned == null) {
+    //     return res.status(403).json({message: "Error!"})
+    // }else {
+
+    //     return res.status(200).json({content: returned});
+    // }
+    
 }
 
 const getFriends = async (req,res) => {
     try {
-        const friends = await UserSchema.find({_id: {$in: req.currentUser.friends}})
-        res.status(200).json({friends})
-    }catch(error) {
+        
+        const user = await UserSchema.findOne({_id: req.userID})
+        const friends = user.friends;
+        let toReturn = [];
+        const stuff = await UserSchema.find({_id: {$in: friends}});
+        for(let i = 0; i < stuff.length; i++) {
+            
+            toReturn.push({
+                id: stuff[i]._id,
+                username: stuff[i].username
+            })
+        }
+        
+        return res.status(200).json({content: toReturn})
+
+    }
+    catch(error) {
         return res.status(200).json({message: error.message})
     }
 }
 
 const getFriendRequests = async (req,res) => {
-    const users = await UserSchema.find({_id: {$in: req.currentUser.requestsReceived}})
-    return res.status(200).json({friendRequests: users})
-}
-
-const addFriend = async (req,res) => {
-    const friendID = await UserSchema.findOne({_id: req.body.ID})
-    const friend = req.currentUser[0].friends
     
-    for(i = 0; i < friend.length; i++) {
-        if(friend[i].valueOf() == friendID._id.valueOf()) {
-            
-            return res.status(400).json({message: "User already friend!"})
-        }
-    }
+    const user = await UserSchema.findById({_id: req.userID});
 
-    if(user) {
-        let addFriend = await UserSchema.updateOne({_id: req.userID}, {
-            $push: {friends: friendID._id}
-        })
-        
-        if(addFriend) {
-            return res.status(200).json({message: "Friend Added"})
-        }
-    }
+    //const users = await UserSchema.find({_id: {$in: req.currentUser.requestsReceived}})
+    return res.status(200).json({friendRequests: user.receivedRequests})
 }
 
-module.exports = {sendFriendRequest,getFriends,getFriendRequests,addFriend,acceptFriendRequest}
+module.exports = {
+    sendFriendRequest,
+    getFriends,
+    getFriendRequests,
+    acceptFriendRequest,
+    rejectFriendRequest
+}

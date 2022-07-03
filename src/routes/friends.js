@@ -1,16 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const {sendFriendRequest,getFriends,getFriendRequests,addFriend,acceptFriendRequest} = require("../controllers/friends.js")
+const {verifyJWT} = require("../helpers/functions")
+const {
+    sendFriendRequest,
+    getFriends,
+    getFriendRequests,
+    addFriend,
+    acceptFriendRequest,
+    rejectFriendRequest
+} = require("../controllers/friends.js")
 
+router.post("/requests/send/:id/",verifyJWT,sendFriendRequest);
+router.post("/requests/accept/:id/",verifyJWT,acceptFriendRequest);
+router.post("/requests/reject/:id/",verifyJWT,rejectFriendRequest);
 
-router.post("/requests/send/:id/",sendFriendRequest);
-router.post("/requests/accept/:id/",acceptFriendRequest);
+router.get("/requests",verifyJWT,getFriendRequests)
 
-router.get("/requests",getFriendRequests)
+router.get("/",verifyJWT,getFriends)
 
-router.get("/",getFriends)
-
-router.post("/add/:id",addFriend)
 
 
 module.exports = router;

@@ -1,10 +1,17 @@
-const containsUser = (userID,array) => {
-    for(a = 0; a < array.length; a++) {
-        if(array[a].valueOf() == userID) {
-            return true;
+const jwt = require("jsonwebtoken")
+
+const containsUser = (user,array) => {
+    try{
+        for(let i = 0; i < array.length; i++) {
+            if(array[i]._id.valueOf() == user) {
+                return true;
+            }
         }
+        return false;
+    }catch(error) {
+        console.log(error.message)
     }
-    return false;
+    
 }
 
 const verifyJWT = (req,res,next) => {
@@ -12,7 +19,7 @@ const verifyJWT = (req,res,next) => {
     const token = req.headers["authorization"].split(" ")[1]
     
     if(token) {
-        jwt.verify(token,process.env.JWT_TOKEN, (err,result) => {
+        jwt.verify(token,process.env.JWT_SECRET, (err,result) => {
             if(err) return res.status(403).json({message: "Invalid Token"})        
             req.userID = result.userId 
             next()

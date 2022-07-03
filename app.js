@@ -13,6 +13,7 @@ const {containsUser,verifyJWT,getUser} = require("./src/helpers/functions")
 const auth_routes = require("./src/routes/auth.js")
 const events_routes = require("./src/routes/events.js")
 const friends_routes = require("./src/routes/friends.js")
+const user_routes = require("./src/routes/user.js")
 
 const app = express()
 app.use(cors())
@@ -26,7 +27,7 @@ let io = new Server(server, {
 const PORT = 4000;
 
 mongoose.connect(process.env.DB_CONNECTION, () => {
-    console.log("database conncted!");
+    console.log("database connected!");
 })
 
 
@@ -116,36 +117,7 @@ io.on("connection", async (socket) => {
 app.use("/api/auth",auth_routes);
 app.use("/api/events",events_routes);
 app.use("/api/friends",friends_routes);
-
-app.get("/getUserInfo",verifyJWT, async (req,res) => {
-    let user = await UserSchema.findOne({_id: req.userID})
-    
-    if(user) {
-        return res.status(200).json({username: user.username})
-    }
-})
-
-app.get("/getUserEvents",verifyJWT, async (req,res) => {
-    let user = await UserSchema.findOne({_id: req.userID})
-
-    if(user) {
-        req.username = user.username
-    }
-
-    let userEvents = await EventSchema.find({host: req.username})
-    
-    if(userEvents) {
-        return res.status(200).json({events: userEvents})
-    }
-})
-
-app.get("/getAllUserEvents",verifyJWT, async (req,res) => {
-    let userEvents = await EventSchema.find()
-    
-    if(userEvents) {
-        return res.status(200).json({events: userEvents})
-    }
-})
+app.use("/api/users",user_routes);
 
 app.post("/findUsers", verifyJWT, getUser , async (req,res) => {
     const searchedUser = req.body.input

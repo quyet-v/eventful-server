@@ -22,7 +22,7 @@ const signup = async (req,res) => {
                 return res.status(401).json({message: error.message})
             }
             
-            const token = jwt.sign({userId: user._id}, process.env.JWT_TOKEN)
+            const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET)
             
             return res.status(200).json({message:"Account created!", token, userId: user._id})
         })
@@ -47,7 +47,7 @@ const login = async (req,res) => {
             }
             
             if(result) {
-                let token = jwt.sign({userId: user._id}, process.env.JWT_TOKEN)
+                let token = jwt.sign({userId: user._id}, process.env.JWT_SECRET)
                 return res.status(200).json({message: "Login succeeded!",token})
             }
         })
