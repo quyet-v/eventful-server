@@ -1,33 +1,46 @@
 const EventSchema = require("../models/Event.js")
+const UserSchema = require("../models/User.js")
 
 
 const createEvent = async (req,res) => {
-    let user = await UserSchema.findOne({_id: req.userID})
+    try {
+        
+        const user = await UserSchema.findOne({_id: req.userID})
 
-    if(user == null) return res.status(403).json({message: "User not found"})
-   
-    let newEvent = new EventSchema({
-        host: user.username,
-        name: req.body.name,
-        description: req.body.description,
-        date: req.body.date,
-        time: req.body.time,
-        location: req.body.location,
-    })
-
-    let results = newEvent.save((err,res) => {
-        if(err) return res.status(403).json({message: "A error occured while saving the event!"})
-    })
+        if(user == null) return res.status(403).json({message: "User not found"})
     
-    if(results == null) return res.status(403).json({message: "A error occured while saving the event!"})
+        
+        const imgString = req.body.img.split(",");
+        const buffer = Buffer.from(imgString[1],"base64")
+     
+        const newEvent = new EventSchema({
+            host: user.username,
+            name: req.body.name,
+            description: req.body.description,
+            date: req.body.date,
+            time: req.body.time,
+            location: req.body.location,
+            img: buffer
+        })
 
-    let updateResults = await UserSchema.updateOne({_id: req.userID},{
-        $push: {events: results._id}
-    })
+        let results = newEvent.save((err,res) => {
+            if(err) return res.status(403).json({message: "A error occured while saving the event!"})
+        })
+        
+        if(results == null) return res.status(403).json({message: "A error occured while saving the event!"})
 
-    if(updateResults == null) return res.status(403).json({message: "A error occured while updating the event!"})
+        let updateResults = await UserSchema.updateOne({_id: req.userID},{
+            $push: {events: results._id}
+        })
 
-    return res.status(200).json({message: "Event saved and updated"})
+        if(updateResults == null) return res.status(403).json({message: "A error occured while updating the event!"})
+
+        return res.status(200).json({message: "Event saved and updated"})
+    }
+    catch(error) {
+        return res.status(403).json({message: error.message})
+    }
+    
 }
 
 const joinEvent = async (req,res) => {
@@ -113,7 +126,15 @@ const getAllEvents = async (req,res) => {
     }
 }
 
+const getUserEvents = async (req,res) => {
+    const user = await UserSchema.findOne({_id: req.userID})
+
+    const events = await EventSchema.find({host: user.username})
+
+    return res.status(200).json({events})
+}
 
 
 
-module.exports = {createEvent,joinEvent,getEventInfo,removeEvent,leaveEvent,getAllEvents}
+
+module.exports = {createEvent,joinEvent,getEventInfo,removeEvent,leaveEvent,getAllEvents,getUserEvents}

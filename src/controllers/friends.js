@@ -74,10 +74,6 @@ const acceptFriendRequest = async (req,res) => {
     addFriend(user,acceptedUser);
 
     res.redirect("/api/users/info");
-
-
-
-
     // if(client && acceptedUser) {
     //     let acceptedUserUpdate = await  UserSchema.findOneAndUpdate({_id: acceptedUser._id}, {
     //         $push: {friends: client._id},
@@ -128,7 +124,6 @@ const getFriends = async (req,res) => {
         let toReturn = [];
         const stuff = await UserSchema.find({_id: {$in: friends}});
         for(let i = 0; i < stuff.length; i++) {
-            
             toReturn.push({
                 id: stuff[i]._id,
                 username: stuff[i].username
@@ -136,7 +131,6 @@ const getFriends = async (req,res) => {
         }
         
         return res.status(200).json({content: toReturn})
-
     }
     catch(error) {
         return res.status(200).json({message: error.message})

@@ -23,7 +23,10 @@ let EventSchema = new mongoose.Schema({
     },
     users: [
         
-    ]
+    ],
+    img: {
+        type: Buffer
+    }
     
 
 })

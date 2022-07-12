@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {verifyJWT} = require("../helpers/functions.js")
-const {createEvent,joinEvent,getEventInfo,removeEvent,leaveEvent, getAllEvents} = require("../controllers/events.js")
+const {createEvent,joinEvent,getEventInfo,removeEvent,leaveEvent, getAllEvents,getUserEvents} = require("../controllers/events.js")
 
 router.post("/create",verifyJWT,createEvent)
 
@@ -15,7 +15,7 @@ router.delete("/remove/:id",verifyJWT,removeEvent)
 
 router.get("/all",verifyJWT,getAllEvents);
 
-
+router.get("/user",verifyJWT,getUserEvents)
 
 
 
