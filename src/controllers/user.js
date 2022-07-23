@@ -8,6 +8,7 @@ const getInfo = async (req,res) => {
     const returnedObject = {
         username: user.username,
         friends: user.friends,
+        events: user.events,
         sentRequests: user.sentRequests,
         receivedRequests: user.receivedRequests
     }

@@ -1,6 +1,6 @@
 const EventSchema = require("../models/Event.js")
 const UserSchema = require("../models/User.js")
-
+const mongoose = require("mongoose")
 
 const createEvent = async (req,res) => {
     try {
@@ -50,40 +50,41 @@ const joinEvent = async (req,res) => {
     if(user.username == event.host) return res.status(400).json({message: "You are the owner, you can't join!"});
     
     for(let i = 0; i < event.users.length; i++) {
-        if(event.users[i].username == user.username) return res.status(400).json({message: "Event already joined"})
+        if(event.users[i].username === user.username) return res.status(400).json({message: "Event already joined"})
     }
     
-    if(user && event) {
-        let addUser = await EventSchema.updateOne({_id: event._id}, {
-            $push: {users: user}
-        })
+   
+    await EventSchema.updateOne({_id: event._id}, {
+        $push: {users: user}
+    })
+
+    UserSchema.findOneAndUpdate({_id: user._id}, {
+        $push: {events: event}
+    },{new:true},(err,result) => {
+        if(err) return res.status(403).json(err);
+
+        return res.status(200).json({data:result});
+    })
+    
+    
         
-        if(addUser) {
-            return res.status(200).json({message: "Event joined!"})
-        }
-    }
+    
 }
 
 const getEventInfo = async (req,res) => {
-    let eventID = mongoose.Types.ObjectId(req.params.id)
+    const eventID = req.params.id;
     let invited = false
+   
     
-    if(eventID) {
-        let event = await EventSchema.findOne({_id: eventID})
+    
+    EventSchema.findOne({_id: mongoose.Types.ObjectId(eventID)}, (err,result) => {
+        if(err) return res.status(403).json(err)
 
-        for(let i = 0; i < event.users.length; i++) {
-            if(req.userID == event.users[i]._id) {
-                invited = true;
-                break;
-            }
-        }
+        return res.status(200).json(result)
+    })
 
-        if(event) {
-            return res.status(200).json({message: "Event retrieved", event, invited})
-        }else {
-            return res.status(403).json({message: "Failed to retrieve"})
-        }
-    }
+   
+    
 }
 
 const removeEvent = async (req,res) => {
@@ -106,16 +107,22 @@ const removeEvent = async (req,res) => {
 }
 
 const leaveEvent = async (req,res) => {
-    let eventID = req.body.eventID
+    let event = await EventSchema.findOne({_id: req.body.eventID})
     let user = await UserSchema.findOne({_id: req.userID})
     
-    EventSchema.findOneAndUpdate({_id: mongoose.Types.ObjectId(eventID)}, {
+    await EventSchema.updateOne({_id: event._id}, {
         $pull: {users: {_id: user._id}}
-    }, {new:true}, (error, results) => {
-        if(error) return res.status(400).json({message: error.message})
-
-        return res.status(200).json({message: results})
     })
+
+    UserSchema.findOneAndUpdate({_id: user._id}, {
+        $pull: {events: {_id: event._id}}
+    },{new:true},(err,result) => {
+        if(err) return res.status(403).json(err);
+
+        return res.status(200).json({data:result});
+    })
+
+
 }
 
 const getAllEvents = async (req,res) => {
