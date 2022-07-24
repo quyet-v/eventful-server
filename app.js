@@ -14,6 +14,7 @@ const auth_routes = require("./src/routes/auth.js")
 const events_routes = require("./src/routes/events.js")
 const friends_routes = require("./src/routes/friends.js")
 const user_routes = require("./src/routes/user.js")
+const email_routes = require("./src/routes/email.js")
 
 const app = express()
 app.use(cors())
@@ -118,6 +119,7 @@ app.use("/api/auth",auth_routes);
 app.use("/api/events",events_routes);
 app.use("/api/friends",friends_routes);
 app.use("/api/users",user_routes);
+app.use("/api/email",email_routes);
 
 app.post("/findUsers", verifyJWT, getUser , async (req,res) => {
     const searchedUser = req.body.input
