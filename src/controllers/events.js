@@ -1,6 +1,7 @@
 const EventSchema = require("../models/Event.js")
 const UserSchema = require("../models/User.js")
 const mongoose = require("mongoose")
+const schedule = require("node-schedule");
 
 const createEvent = async (req,res) => {
     try {
@@ -35,6 +36,8 @@ const createEvent = async (req,res) => {
 
         if(updateResults == null) return res.status(403).json({message: "A error occured while updating the event!"})
 
+        
+
         return res.status(200).json({message: "Event saved and updated"})
     }
     catch(error) {
@@ -44,6 +47,7 @@ const createEvent = async (req,res) => {
 }
 
 const joinEvent = async (req,res) => {
+    
     let user = await UserSchema.findOne({_id: req.userID})
     let event = await EventSchema.findOne({_id: req.body.eventID})
     
