@@ -27,7 +27,7 @@ let io = new Server(server, {
 
 const PORT = 4000;
 
-mongoose.connect(process.env.DB_CONNECTION, () => {
+mongoose.connect(process.env.DB_CONNECTION,{useNewUrlParser: true,useUnifiedTopology: true}, () => {
     console.log("database connected!");
 })
 
