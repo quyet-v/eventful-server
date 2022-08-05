@@ -10,4 +10,6 @@ router.get("/all",getAllUsers)
 
 router.get("/events",verifyJWT,getUserEvents)
 
+
+
 module.exports = router

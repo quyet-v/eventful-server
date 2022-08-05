@@ -56,4 +56,9 @@ const login = async (req,res) => {
     }
 }
 
-module.exports = {signup,login}
+const verify = (req,res) => {
+    console.log("hi")
+    return res.status(200).json({message: "User Verified!"})
+}
+
+module.exports = {signup,login,verify}
