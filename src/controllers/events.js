@@ -5,12 +5,10 @@ const schedule = require("node-schedule");
 
 const createEvent = async (req,res) => {
     try {
-        
         const user = await UserSchema.findOne({_id: req.userID})
 
         if(user == null) return res.status(403).json({message: "User not found"})
     
-        
         const imgString = req.body.img.split(",");
         const buffer = Buffer.from(imgString[1],"base64")
      
@@ -24,19 +22,13 @@ const createEvent = async (req,res) => {
             img: buffer
         })
 
-        let results = newEvent.save((err,res) => {
-            if(err) return res.status(403).json({message: "A error occured while saving the event!"})
-        })
-        
-        if(results == null) return res.status(403).json({message: "A error occured while saving the event!"})
+        const results = await newEvent.save();
 
-        let updateResults = await UserSchema.updateOne({_id: req.userID},{
+        UserSchema.updateOne({_id: req.userID},{
             $push: {events: results._id}
+        }, (err,result) => {
+            if(err) return res.status(403).json({message: "A error occured while updating the event!"})
         })
-
-        if(updateResults == null) return res.status(403).json({message: "A error occured while updating the event!"})
-
-        
 
         return res.status(200).json({message: "Event saved and updated"})
     }
@@ -92,22 +84,18 @@ const getEventInfo = async (req,res) => {
 }
 
 const removeEvent = async (req,res) => {
-    const id = req.params
-    const request = EventSchema.deleteOne({_id: mongoose.Types.ObjectId(id)}, (err,res) => {
-        if(err) return res.status(400).json({message: err})
-    })
-    const request2 = UserSchema.updateOne({_id: req.currentUser._id}, {
-        $pull: {events: mongoose.Types.ObjectId(id)}
-    }, (err,res) => {
-        if(err) return res.status(400).json({message: err})
-        
-    })
+    const id = req.params;
 
-    const userEvents = await EventSchema.find({host: req.currentUser.username})
-    console.log(userEvents)
-    if(userEvents) {
-        return res.status(200).json({message:"succss",events: userEvents})
-    }   
+    await EventSchema.deleteOne({_id: mongoose.Types.ObjectId(id)});
+    
+    await UserSchema.updateOne({_id: req.userID}, {
+        $pull: {events: mongoose.Types.ObjectId(id)}
+    });
+
+    EventSchema.find((err,result) => {
+        if (err) return res.status(403).json({message: err});
+        return res.status(200).json(result);
+    });
 }
 
 const leaveEvent = async (req,res) => {
