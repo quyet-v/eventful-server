@@ -13,9 +13,7 @@ const {
 router.post("/requests/send/:id/",verifyJWT,sendFriendRequest);
 router.post("/requests/accept/:id/",verifyJWT,acceptFriendRequest);
 router.post("/requests/reject/:id/",verifyJWT,rejectFriendRequest);
-
 router.get("/requests",verifyJWT,getFriendRequests)
-
 router.get("/",verifyJWT,getFriends)
 
 

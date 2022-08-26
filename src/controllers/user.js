@@ -13,7 +13,6 @@ const getInfo = async (req,res) => {
         receivedRequests: user.receivedRequests
     }
 
-
     if(user) {
         return res.status(200).json(returnedObject)
     }
@@ -43,4 +42,13 @@ const getAllUsers = async (req,res) => {
     }
 }
 
-module.exports = {getInfo,getUserEvents,getAllUsers}
+const findUsers = async (req,res) => {
+    const input = req.params.input;
+
+    UserSchema.find({username: {$regex: input}}, (err,result) => {
+        if(err) return res.status(403).json({err}); 
+        return res.status(200).json({result});
+    })
+}
+
+module.exports = {getInfo,getUserEvents,getAllUsers,findUsers}

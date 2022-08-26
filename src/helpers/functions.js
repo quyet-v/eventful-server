@@ -15,6 +15,7 @@ const containsUser = (user,array) => {
 }
 
 const verifyJWT = (req,res,next) => {
+    console.log()
     const token = req.headers["authorization"].split(" ")[1]
     
     if(token) {

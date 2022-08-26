@@ -49,7 +49,6 @@ const joinEvent = async (req,res) => {
         if(event.users[i].username === user.username) return res.status(400).json({message: "Event already joined"})
     }
     
-   
     await EventSchema.updateOne({_id: event._id}, {
         $push: {users: user}
     })
@@ -71,16 +70,10 @@ const getEventInfo = async (req,res) => {
     const eventID = req.params.id;
     let invited = false
    
-    
-    
     EventSchema.findOne({_id: mongoose.Types.ObjectId(eventID)}, (err,result) => {
         if(err) return res.status(403).json(err)
-
         return res.status(200).json(result)
     })
-
-   
-    
 }
 
 const removeEvent = async (req,res) => {

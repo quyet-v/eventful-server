@@ -8,7 +8,7 @@ const {
 } = require("../services/friends.js")
 
 const sendFriendRequest = async (req,res) => {
-    const requestReceiverId = req.params.id;
+    const requestReceiverId = req.body.id;
     const requestSenderId = req.userID;
 
     const requestReceiver = await UserSchema.findOne({_id: requestReceiverId})
@@ -18,46 +18,27 @@ const sendFriendRequest = async (req,res) => {
 
     const friends = requestSender.friends;
     
-    let returnObject = {
-        sentRequests,
-        friends
-    }
-    
     if(containsUser(requestReceiverId,sentRequests)) {
         const message = "Request already sent!";
-        returnObject = {...returnObject,message};
         
-        return res.status(403).json(returnObject);
-    }
-
-    if(containsUser(requestReceiverId,friends)) {
+        return res.status(403).json(message);
+    } else if(containsUser(requestReceiverId,friends)) {
         const message = "Already friends!";
-        returnObject = {...returnObject,message};
         
-        return res.status(403).json(returnObject);
-    }
-
-    if(requestSender && requestReceiver) {
-        const saveRequest = await  UserSchema.findOneAndUpdate({_id: requestReceiverId}, {
-            $push: {receivedRequests: mongoose.Types.ObjectId(requestSenderId)}
+        return res.status(403).json(message);
+    } else {
+        await UserSchema.findOneAndUpdate({_id: requestReceiverId}, {
+            $push: {receivedRequests: requestSender}
         })
 
-        let saveRequestSent = UserSchema.findByIdAndUpdate({_id: requestSenderId}, {
-            $push: {sentRequests: mongoose.Types.ObjectId(requestReceiverId)}
+        UserSchema.findByIdAndUpdate({_id: requestSenderId}, {
+            $push: {sentRequests: requestReceiver}
         },{new: true}, (err,doc) => {
             if(err) {
                 return res.status(403).json({message: "Error when send friend request!"});
             }
-            else {
-                returnObject = null;
-                returnObject = {
-                    sentRequests: doc.sentRequests,
-                    friends: doc.friends,
-                    message: "Friend request sent!"
-                }
-               
-                return res.status(200).json(returnObject);
-            }
+            
+            return res.status(200).json({message: "Success", doc});
         })
     }
 }

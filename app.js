@@ -121,22 +121,6 @@ app.use("/api/friends",friends_routes);
 app.use("/api/users",user_routes);
 app.use("/api/email",email_routes);
 
-app.post("/findUsers", verifyJWT, getUser , async (req,res) => {
-    const searchedUser = req.body.input
-    const result = await UserSchema.find({username: {$regex: searchedUser}})
-
-    const checkName = (user) => {
-        return user.username != req.currentUser.username;
-    }
-
-    const resultsFilter = result.filter(checkName)
-    const requestsSent = req.currentUser.requestsSent
-    
-    if(result) {
-        res.status(200).json({message: "Users found!", resultsFilter,currentFriends: req.currentUser.friends, requestsSent})
-    }
-})
-
 app.listen(process.env.PORT || 4000,() => {
     console.log("Server started on port " + 4000);
 })
