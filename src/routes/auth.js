@@ -1,12 +1,13 @@
-const express = require("express");
+const express = require('express');
+
 const router = express.Router();
-const {signup,login,verify} = require("../controllers/auth.js");
-const { verifyJWT } = require("../helpers/functions.js");
+const { signup, login, verify } = require('../controllers/auth');
+const { verifyJWT } = require('../helpers/functions');
 
-router.post("/signup",signup)
+router.post('/signup', signup);
 
-router.post("/login",login)
+router.post('/login', login);
 
-router.get("/verify",verifyJWT, verify)
+router.get('/verify', verifyJWT, verify);
 
-module.exports = router
+module.exports = router;

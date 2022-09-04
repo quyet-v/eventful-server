@@ -1,135 +1,130 @@
-const UserSchema = require("../models/User.js")
-const {containsUser} = require("../helpers/functions")
-const mongoose = require("mongoose");
+/* eslint-disable no-plusplus */
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable consistent-return */
+const UserSchema = require('../models/User');
+const { containsUser } = require('../helpers/functions');
 const {
-    removeSentRequest,
-    removeReceivedRequest,
-    addFriend
-} = require("../services/friends.js")
+  removeSentRequest,
+  removeReceivedRequest,
+  addFriend,
+} = require('../services/friends');
 
-const sendFriendRequest = async (req,res) => {
-    const requestReceiverId = req.body.id;
-    const requestSenderId = req.userID;
+const sendFriendRequest = async (req, res) => {
+  const requestReceiverId = req.body.id;
+  const requestSenderId = req.userID;
 
-    const requestReceiver = await UserSchema.findOne({_id: requestReceiverId})
-    const requestSender = await UserSchema.findOne({_id: requestSenderId})
-    
-    const sentRequests = requestSender.sentRequests;
+  const requestReceiver = await UserSchema.findOne({ _id: requestReceiverId });
+  const requestSender = await UserSchema.findOne({ _id: requestSenderId });
 
-    const friends = requestSender.friends;
-    
-    if(containsUser(requestReceiverId,sentRequests)) {
-        const message = "Request already sent!";
-        
-        return res.status(403).json(message);
-    } else if(containsUser(requestReceiverId,friends)) {
-        const message = "Already friends!";
-        
-        return res.status(403).json(message);
-    } else {
-        await UserSchema.findOneAndUpdate({_id: requestReceiverId}, {
-            $push: {receivedRequests: requestSender}
-        })
+  const { sentRequests } = requestSender;
 
-        UserSchema.findByIdAndUpdate({_id: requestSenderId}, {
-            $push: {sentRequests: requestReceiver}
-        },{new: true}, (err,doc) => {
-            if(err) {
-                return res.status(403).json({message: "Error when send friend request!"});
-            }
-            
-            return res.status(200).json({message: "Success", doc});
-        })
+  const { friends } = requestSender;
+
+  if (containsUser(requestReceiverId, sentRequests)) {
+    const message = 'Request already sent!';
+
+    return res.status(403).json(message);
+  } if (containsUser(requestReceiverId, friends)) {
+    const message = 'Already friends!';
+
+    return res.status(403).json(message);
+  }
+  await UserSchema.findOneAndUpdate({ _id: requestReceiverId }, {
+    $push: { receivedRequests: requestSender },
+  });
+
+  UserSchema.findByIdAndUpdate({ _id: requestSenderId }, {
+    $push: { sentRequests: requestReceiver },
+  }, { new: true }, (err, doc) => {
+    if (err) {
+      return res.status(403).json({ message: 'Error when send friend request!' });
     }
-}
 
-const acceptFriendRequest = async (req,res) => {
+    return res.status(200).json({ message: 'Success', doc });
+  });
+};
 
-    const acceptedUser = req.params.id;
-    const user = req.userID;
+const acceptFriendRequest = async (req, res) => {
+  const acceptedUser = await UserSchema.findOne({ _id: req.body.id });
+  const user = await UserSchema.findOne({ _id: req.userID });
 
-    removeSentRequest(req.userID,acceptedUser);
-    removeReceivedRequest(req.userID,acceptedUser);
+  await removeSentRequest(acceptedUser._id, user._id);
+  await removeReceivedRequest(user._id, acceptedUser._id);
 
-    addFriend(acceptedUser,user);
-    addFriend(user,acceptedUser);
+  await addFriend(acceptedUser._id, user);
+  await addFriend(user._id, acceptedUser);
 
-    res.redirect("/api/users/info");
-    // if(client && acceptedUser) {
-    //     let acceptedUserUpdate = await  UserSchema.findOneAndUpdate({_id: acceptedUser._id}, {
-    //         $push: {friends: client._id},
-    //         $pull: {requestsSent: client._id}
-    //     })
+  res.redirect('/api/users/info');
+  // if(client && acceptedUser) {
+  //     let acceptedUserUpdate = await  UserSchema.findOneAndUpdate({_id: acceptedUser._id}, {
+  //         $push: {friends: client._id},
+  //         $pull: {requestsSent: client._id}
+  //     })
 
-    //     let clientUpdate = await  UserSchema.findByIdAndUpdate({_id: client._id}, {
-    //         $push: {friends: acceptedUser._id},
-    //         $pull: {requestsReceived: acceptedUser._id}
-    //     })
+  //     let clientUpdate = await  UserSchema.findByIdAndUpdate({_id: client._id}, {
+  //         $push: {friends: acceptedUser._id},
+  //         $pull: {requestsReceived: acceptedUser._id}
+  //     })
 
-    //     let userInfo = await UserSchema.find({_id: req.currentUser._id})
-    //     console.log(userInfo)
-        
-    //     return res.status(200).json({message: "Request Sent",currentFriends: userInfo[0].friends,currentRequests: userInfo[0].requestsSent})
-    // }
-}
+  //     let userInfo = await UserSchema.find({_id: req.currentUser._id})
+  //     console.log(userInfo)
 
-const rejectFriendRequest = async (req,res) => {
-    try{
+  //     return res.status(200).json(
+  //        {message: "Request Sent",
+  //         currentFriends: userInfo[0].friends,currentRequests: userInfo[0].requestsSent})
+  // }
+};
 
-        const rejectedId = req.params.id;
-        
-        removeSentRequest(req.userID,rejectedId);
-        removeReceivedRequest(req.userID,rejectedId)
+const rejectFriendRequest = async (req, res) => {
+  try {
+    const rejectedId = req.params.id;
 
-        res.redirect("/api/users/info");
+    removeSentRequest(req.userID, rejectedId);
+    removeReceivedRequest(req.userID, rejectedId);
+
+    res.redirect('/api/users/info');
+  } catch (error) {
+    return res.status(403).json({ message: error.message });
+  }
+
+  // if(returned == null) {
+  //     return res.status(403).json({message: "Error!"})
+  // }else {
+
+  //     return res.status(200).json({content: returned});
+  // }
+};
+
+const getFriends = async (req, res) => {
+  try {
+    const user = await UserSchema.findOne({ _id: req.userID });
+    const { friends } = user;
+    const toReturn = [];
+    const stuff = await UserSchema.find({ _id: { $in: friends } });
+    for (let i = 0; i < stuff.length; i++) {
+      toReturn.push({
+        id: stuff[i]._id,
+        username: stuff[i].username,
+      });
     }
-    catch(error) {
-        return res.status(403).json({message: error.message})
-    }
-    
-    
-    // if(returned == null) {
-    //     return res.status(403).json({message: "Error!"})
-    // }else {
 
-    //     return res.status(200).json({content: returned});
-    // }
-    
-}
+    return res.status(200).json({ content: toReturn });
+  } catch (error) {
+    return res.status(200).json({ message: error.message });
+  }
+};
 
-const getFriends = async (req,res) => {
-    try {
-        
-        const user = await UserSchema.findOne({_id: req.userID})
-        const friends = user.friends;
-        let toReturn = [];
-        const stuff = await UserSchema.find({_id: {$in: friends}});
-        for(let i = 0; i < stuff.length; i++) {
-            toReturn.push({
-                id: stuff[i]._id,
-                username: stuff[i].username
-            })
-        }
-        
-        return res.status(200).json({content: toReturn})
-    }
-    catch(error) {
-        return res.status(200).json({message: error.message})
-    }
-}
+const getFriendRequests = async (req, res) => {
+  const user = await UserSchema.findById({ _id: req.userID });
 
-const getFriendRequests = async (req,res) => {
-    
-    const user = await UserSchema.findById({_id: req.userID});
-
-    //const users = await UserSchema.find({_id: {$in: req.currentUser.requestsReceived}})
-    return res.status(200).json({friendRequests: user.receivedRequests})
-}
+  // const users = await UserSchema.find({_id: {$in: req.currentUser.requestsReceived}})
+  return res.status(200).json({ friendRequests: user.receivedRequests });
+};
 
 module.exports = {
-    sendFriendRequest,
-    getFriends,
-    getFriendRequests,
-    acceptFriendRequest,
-    rejectFriendRequest
-}
+  sendFriendRequest,
+  getFriends,
+  getFriendRequests,
+  acceptFriendRequest,
+  rejectFriendRequest,
+};

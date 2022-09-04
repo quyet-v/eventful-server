@@ -1,32 +1,30 @@
-const { ObjectId } = require("mongodb")
-let mongoose = require("mongoose")
+const mongoose = require('mongoose');
 
-let UserSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        unique: true
-    },
-    username: {
-        type: String,
-        unique: true
-    },
-    password: {
-        type: String
-    },
-    events: [
-        
-    ],
-    friends: [
-        
-    ],
-    sentRequests: [
-    ],
-    receivedRequests: [
-    ]
-    
+const UserSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    unique: true,
+  },
+  username: {
+    type: String,
+    unique: true,
+  },
+  password: {
+    type: String,
+  },
+  events: [
 
-})
+  ],
+  friends: [
 
-let UserModel = mongoose.model("Users", UserSchema)
+  ],
+  sentRequests: [
+  ],
+  receivedRequests: [
+  ],
 
-module.exports = UserModel
+});
+
+const UserModel = mongoose.model('Users', UserSchema);
+
+module.exports = UserModel;

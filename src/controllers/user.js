@@ -1,54 +1,55 @@
+/* eslint-disable consistent-return */
+const UserSchema = require('../models/User');
+const EventSchema = require('../models/Event');
 
-const UserSchema = require("../models/User")
-const EventSchema = require("../models/Event")
+const getInfo = async (req, res) => {
+  const user = await UserSchema.findOne({ _id: req.userID });
 
-const getInfo = async (req,res) => {
-    const user = await UserSchema.findOne({_id: req.userID})
+  const returnedObject = {
+    username: user.username,
+    friends: user.friends,
+    events: user.events,
+    sentRequests: user.sentRequests,
+    receivedRequests: user.receivedRequests,
+  };
 
-    const returnedObject = {
-        username: user.username,
-        friends: user.friends,
-        events: user.events,
-        sentRequests: user.sentRequests,
-        receivedRequests: user.receivedRequests
-    }
+  if (user) {
+    return res.status(200).json(returnedObject);
+  }
+};
 
-    if(user) {
-        return res.status(200).json(returnedObject)
-    }
-}
+const getUserEvents = async (req, res) => {
+  const user = await UserSchema.findOne({ _id: req.userID });
 
-const getUserEvents = async (req,res) => {
-    let user = await UserSchema.findOne({_id: req.userID})
+  if (user) {
+    req.username = user.username;
+  }
 
-    if(user) {
-        req.username = user.username
-    }
+  const userEvents = await EventSchema.find({ host: req.username });
 
-    let userEvents = await EventSchema.find({host: req.username})
-    
-    if(userEvents) {
-        return res.status(200).json({events: userEvents})
-    }
-}
+  if (userEvents) {
+    return res.status(200).json({ events: userEvents });
+  }
+};
 
-const getAllUsers = async (req,res) => {
-    const allUsers = await UserSchema.find();
+const getAllUsers = async (req, res) => {
+  const allUsers = await UserSchema.find();
 
-    if(allUsers) {
-        return res.status(200).json({allUsers})
-    }else {
-        return res.status(403).json({message: "Error"})
-    }
-}
+  if (allUsers) {
+    return res.status(200).json({ allUsers });
+  }
+  return res.status(403).json({ message: 'Error' });
+};
 
-const findUsers = async (req,res) => {
-    const input = req.params.input;
+const findUsers = async (req, res) => {
+  const { input } = req.params;
 
-    UserSchema.find({username: {$regex: input}}, (err,result) => {
-        if(err) return res.status(403).json({err}); 
-        return res.status(200).json({result});
-    })
-}
+  UserSchema.find({ username: { $regex: input } }, (err, result) => {
+    if (err) return res.status(403).json({ err });
+    return res.status(200).json({ result });
+  });
+};
 
-module.exports = {getInfo,getUserEvents,getAllUsers,findUsers}
+module.exports = {
+  getInfo, getUserEvents, getAllUsers, findUsers,
+};

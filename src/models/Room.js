@@ -1,16 +1,15 @@
-let mongoose = require("mongoose")
+const mongoose = require('mongoose');
 
-let RoomSchema = new mongoose.Schema({
-    users: [
+const RoomSchema = new mongoose.Schema({
+  users: [
 
-    ],
-    messages: [
-        
-    ]
-    
+  ],
+  messages: [
 
-})
+  ],
 
-let RoomModel = mongoose.model("Rooms", RoomSchema)
+});
 
-module.exports = RoomModel
+const RoomModel = mongoose.model('Rooms', RoomSchema);
+
+module.exports = RoomModel;

@@ -1,126 +1,138 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-require("dotenv").config();
-const {Server} = require("socket.io");
-const HTTP = require("http");
-const bcrypt = require("bcrypt");
-const UserSchema = require("./src/models/User.js")
-const EventSchema = require("./src/models/Event.js")
-const RoomSchema = require("./src/models/Room.js")
-const jwt = require("jsonwebtoken")
-const {containsUser,verifyJWT,getUser} = require("./src/helpers/functions")
-const auth_routes = require("./src/routes/auth.js")
-const events_routes = require("./src/routes/events.js")
-const friends_routes = require("./src/routes/friends.js")
-const user_routes = require("./src/routes/user.js")
-const email_routes = require("./src/routes/email.js")
+/* eslint-disable no-param-reassign */
+/* eslint-disable no-plusplus */
+/* eslint-disable no-undef */
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
+const { Server } = require('socket.io');
+const HTTP = require('http');
+const jwt = require('jsonwebtoken');
+const UserSchema = require('./src/models/User');
+const RoomSchema = require('./src/models/Room');
+// const { containsUser } = require('./src/helpers/functions');
+const authRoutes = require('./src/routes/auth');
+const eventsRoutes = require('./src/routes/events');
+const friendsRoutes = require('./src/routes/friends');
+const userRoutes = require('./src/routes/user');
+const emailRoutes = require('./src/routes/email');
 
-const app = express()
-app.use(cors())
-app.use(express.json({limit: '16mb'}));
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '16mb' }));
 
-let server = HTTP.createServer(app)
-let io = new Server(server, {
-    cors:{origin: "*"}
+const server = HTTP.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*' },
 });
 
-const PORT = 4000;
+mongoose.connect(
+  process.env.DB_CONNECTION,
+  { useNewUrlParser: true, useUnifiedTopology: true },
+  () => {
+    console.log('database connected!');
+  },
+);
 
-mongoose.connect(process.env.DB_CONNECTION,{useNewUrlParser: true,useUnifiedTopology: true}, () => {
-    console.log("database connected!");
-})
+io.on('connection', async (socket) => {
+  console.log(`user has connected ${socket.id}`);
+  let currentUser;
+  let messagedUser;
+  let foundRoom;
 
-
-io.on("connection", async (socket) => {
-    console.log(`user has connected ${socket.id}`)
-
-    let roomFound;
-    let currentUser;
-    let currentUsername;
-
-    socket.on("join", async (data) => {
-        if(data.token) {
-            jwt.verify(data.token,"thisistest", (err,result) => {
-                
-                if(err) {
-                    console.log(err.message);
-                    return;
-                } 
-                
-                socket.user = result.userId
-                currentUser = result.userId
-            })
+  socket.on('join', async (data) => {
+    if (data.token) {
+      jwt.verify(data.token, 'thisistest', (err, result) => {
+        if (err) {
+          console.log(err.message);
+          return;
         }
+        currentUser = result.userId;
+        messagedUser = data.messagedUser._id;
+      });
+    }
 
-        currentUsername = await UserSchema.findOne({_id: data.user});
-        console.log(currentUsername)
+    // Get all rooms
+    foundRoom = await RoomSchema.find(
+      {
+        $and: [
+          { users: mongoose.Types.ObjectId(currentUser) },
+          { users: mongoose.Types.ObjectId(messagedUser) },
+        ],
+      },
+    );
 
-        //Get all rooms
-        let allRooms = await RoomSchema.find();
+    // Search through all rooms to see if user is in room
+    // for (i = 0; i < allRooms.length; i++) {
+    //   if (
+    //     containsUser(data.user, allRooms[i].users)
+    //     && containsUser(currentUser, allRooms[i].users)) {
+    //     roomFound = allRooms[i];
+    //     break;
+    //   }
+    // }
 
-        //Search through all rooms to see if user is in room
-        for(i = 0; i < allRooms.length; i++) {
-            if(containsUser(data.user,allRooms[i].users) && containsUser(currentUser,allRooms[i].users)) {
-                roomFound = allRooms[i];
-                break;
-            }
+    // If room found, joins room
+    // If room not found, create room and join room
+    if (foundRoom.length > 0) {
+      socket.join(foundRoom[0]._id.valueOf());
+    } else {
+      const usersArray = [
+        mongoose.Types.ObjectId(currentUser),
+        mongoose.Types.ObjectId(messagedUser),
+      ];
+      const newRoom = new RoomSchema({
+        users: usersArray,
+      });
+
+      await newRoom.save((err, res) => {
+        if (err) {
+          console.log(err.message);
+        } else {
+          foundRoom = res;
+          socket.join(res._id.valueOf());
         }
-        
-        //If room found, joins room
-        //If room not found, create room and join room
-        if(roomFound) {
-            console.log("room joined!")
-            socket.join(roomFound._id.valueOf());
-        }else {
-            let usersArray = [mongoose.Types.ObjectId(data.user),mongoose.Types.ObjectId(socket.user)]
-            let newRoom = new RoomSchema({
-                users: usersArray
-            })
+      });
+    }
 
-            await newRoom.save((err,res) => {
-                if(err) {
-                    console.log(err.message);
-                }else {
-                    console.log("room created and joined!")
-                    roomFound = res
-                    socket.join(res._id.valueOf());
-                }
-            })
+    console.log(foundRoom);
+    socket.emit('returnmessages', { messages: foundRoom[0].messages });
+  });
+
+  socket.on('closeconnection', () => {
+    if (foundRoom) {
+      socket.leave(foundRoom._id);
+      foundRoom = null;
+      socket.disconnect();
+    }
+  });
+
+  socket.on('sendmessage', async (message) => {
+    if (foundRoom) {
+      const senderObject = await UserSchema.findOne({ _id: mongoose.Types.ObjectId(currentUser) });
+      const sentMessage = {
+        user: senderObject,
+        message,
+      };
+      RoomSchema.findOneAndUpdate({ _id: foundRoom[0]._id }, {
+        $push: { messages: sentMessage },
+      }, { new: true }, (err, result) => {
+        if (err) {
+          console.log(err);
+        } else {
+          io.sockets.in(foundRoom[0]._id.valueOf()).emit('giveback', result);
         }
+      });
+    }
+  });
+});
 
-        socket.emit("returnmessages", {roomFound,currentUsername})
-    })
+app.use('/api/auth', authRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/friends', friendsRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/email', emailRoutes);
 
-    socket.on("closeconnection", () => {
-        if(roomFound) {
-            socket.leave(roomFound._id)
-            roomFound = null
-            socket.disconnect()
-        } 
-    })
-
-    socket.on("sendmessage", async message => {
-        if(roomFound) {
-            let senderObject = await UserSchema.findOne({_id: mongoose.Types.ObjectId(currentUser)});
-            console.log({sender: senderObject.username,message}) 
-            
-            let room = await RoomSchema.findOne({_id: roomFound._id})
-            await room.messages.push({sender: senderObject.username,message})
-            await room.save()
-            let room2 = await RoomSchema.findOne({_id: roomFound._id})
-            io.sockets.in(roomFound._id.valueOf()).emit("giveback", room2)
-        }
-    })
-})
-
-
-app.use("/api/auth",auth_routes);
-app.use("/api/events",events_routes);
-app.use("/api/friends",friends_routes);
-app.use("/api/users",user_routes);
-app.use("/api/email",email_routes);
-
-app.listen(process.env.PORT || 4000,() => {
-    console.log("Server started on port " + 4000);
-})
+server.listen(process.env.PORT || 4000, () => {
+  console.log(`Server started on port ${4000}`);
+});
