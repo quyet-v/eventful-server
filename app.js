@@ -52,7 +52,7 @@ io.on('connection', async (socket) => {
       });
     }
 
-    // Get all rooms
+    // Try to find a room with both chatting users
     foundRoom = await RoomSchema.find(
       {
         $and: [
@@ -61,16 +61,6 @@ io.on('connection', async (socket) => {
         ],
       },
     );
-
-    // Search through all rooms to see if user is in room
-    // for (i = 0; i < allRooms.length; i++) {
-    //   if (
-    //     containsUser(data.user, allRooms[i].users)
-    //     && containsUser(currentUser, allRooms[i].users)) {
-    //     roomFound = allRooms[i];
-    //     break;
-    //   }
-    // }
 
     // If room found, joins room
     // If room not found, create room and join room
@@ -94,8 +84,6 @@ io.on('connection', async (socket) => {
         }
       });
     }
-
-    console.log(foundRoom);
     socket.emit('returnmessages', { messages: foundRoom[0].messages });
   });
 

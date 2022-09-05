@@ -1,9 +1,10 @@
 /* eslint-disable consistent-return */
+const mongoose = require('mongoose');
 const UserSchema = require('../models/User');
 const EventSchema = require('../models/Event');
 
 const getInfo = async (req, res) => {
-  const user = await UserSchema.findOne({ _id: req.userID });
+  const user = await UserSchema.findOne({ _id: mongoose.Types.ObjectId(req.userID) });
 
   const returnedObject = {
     username: user.username,
