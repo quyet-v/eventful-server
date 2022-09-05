@@ -5,18 +5,7 @@ const EventSchema = require('../models/Event');
 
 const getInfo = async (req, res) => {
   const user = await UserSchema.findOne({ _id: mongoose.Types.ObjectId(req.userID) });
-
-  const returnedObject = {
-    username: user.username,
-    friends: user.friends,
-    events: user.events,
-    sentRequests: user.sentRequests,
-    receivedRequests: user.receivedRequests,
-  };
-
-  if (user) {
-    return res.status(200).json(returnedObject);
-  }
+  return res.status(200).json(user);
 };
 
 const getUserEvents = async (req, res) => {
