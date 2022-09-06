@@ -65,7 +65,9 @@ io.on('connection', async (socket) => {
     // If room found, joins room
     // If room not found, create room and join room
     if (foundRoom.length > 0) {
-      socket.join(foundRoom[0]._id.valueOf());
+      // eslint-disable-next-line prefer-destructuring
+      foundRoom = foundRoom[0];
+      socket.join(foundRoom._id.valueOf());
     } else {
       const usersArray = [
         mongoose.Types.ObjectId(currentUser),
@@ -84,7 +86,7 @@ io.on('connection', async (socket) => {
         }
       });
     }
-    socket.emit('returnmessages', { messages: foundRoom[0].messages });
+    socket.emit('returnmessages', { messages: foundRoom.messages });
   });
 
   socket.on('closeconnection', () => {
@@ -102,13 +104,13 @@ io.on('connection', async (socket) => {
         user: senderObject,
         message,
       };
-      RoomSchema.findOneAndUpdate({ _id: foundRoom[0]._id }, {
+      RoomSchema.findOneAndUpdate({ _id: foundRoom._id }, {
         $push: { messages: sentMessage },
       }, { new: true }, (err, result) => {
         if (err) {
           console.log(err);
         } else {
-          io.sockets.in(foundRoom[0]._id.valueOf()).emit('giveback', result);
+          io.sockets.in(foundRoom._id.valueOf()).emit('giveback', result);
         }
       });
     }

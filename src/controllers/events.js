@@ -6,7 +6,7 @@ const UserSchema = require('../models/User');
 
 const createEvent = async (req, res) => {
   try {
-    const user = await UserSchema.findOne({ _id: req.userID });
+    const user = await UserSchema.findOne({ _id: mongoose.Types.ObjectId(req.userID) });
 
     if (user == null) return res.status(403).json({ message: 'User not found' });
 
