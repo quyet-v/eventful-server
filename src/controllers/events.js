@@ -39,7 +39,7 @@ const createEvent = async (req, res) => {
 
 const joinEvent = async (req, res) => {
   const user = await UserSchema.findOne({ _id: req.userID });
-  const event = await EventSchema.findOne({ _id: req.body.eventID });
+  const event = await EventSchema.findOne({ _id: req.body.id });
 
   if (user.username === event.host) return res.status(400).json({ message: "You are the owner, you can't join!" });
 
@@ -85,7 +85,7 @@ const removeEvent = async (req, res) => {
 };
 
 const leaveEvent = async (req, res) => {
-  const event = await EventSchema.findOne({ _id: req.body.eventID });
+  const event = await EventSchema.findOne({ _id: req.body.id });
   const user = await UserSchema.findOne({ _id: req.userID });
 
   await EventSchema.updateOne({ _id: event._id }, {
